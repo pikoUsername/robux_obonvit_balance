@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 import sqlite3
 from asyncpg import Pool, Connection, Record
+from loguru import logger
 
 from app.services.interfaces import BasicDBConnector
 
@@ -21,13 +22,15 @@ class AsyncpgDBConnector(BasicDBConnector):
             async with conn.transaction():
                 await conn.execute(sql, *args, **kwargs)
 
-    async def fetch(self, sql, *args, **kwargs) -> Dict[str, Any]:
+    async def fetch(self, sql, *args, **kwargs) -> Dict[str, Any] | None:
         pool = self.pool
 
         async with pool.acquire() as conn:
             conn: Connection
             record: Record = await conn.fetchrow(sql, *args, **kwargs)
-            return record.items()
+            if not record:
+                return
+            return record
 
     async def fetchmany(self, sql, *args, **kwargs) -> List[Dict[str, Any]]:
         pool = self.pool

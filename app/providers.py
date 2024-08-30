@@ -1,9 +1,6 @@
-from loguru import logger
-
 from app.settings import Settings
-from app.repos import TokenRepository
+from app.repos import TokenRepository, BotRepository
 from app.services.interfaces import BasicDBConnector
-from app.services.queue.publisher import BasicMessageSender
 
 
 async def get_token_service(settings: Settings, connection: BasicDBConnector) -> TokenRepository:
@@ -14,15 +11,9 @@ async def get_token_service(settings: Settings, connection: BasicDBConnector) ->
 	return token_service
 
 
-def get_publisher(settings: Settings):
-	logger.info("Setting up basicMessageSender")
+async def get_bot_service(settings: Settings, connection: BasicDBConnector) -> BotRepository:
+	bot_service = BotRepository(connection, settings.db_bot_table, settings.db_tokens_table)
 
-	publisher = BasicMessageSender(
-		settings.queue_dsn,
-		queue=settings.send_queue_name,
-		exchange=settings.send_queue_exchange_name,
-		routing=settings.send_queue_name,
-	)
+	await bot_service.create_bots_table()
 
-	publisher.connect()
-	logger.info("Connection to publisher has been established")
+	return bot_service

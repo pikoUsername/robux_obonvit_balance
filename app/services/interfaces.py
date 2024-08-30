@@ -31,7 +31,7 @@ class BasicDBConnector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def fetch(self, sql, *args, **kwargs) -> Dict[str, Any]:
+    async def fetch(self, sql, *args, **kwargs) -> Dict[str, Any] | None:
         pass
 
     @abc.abstractmethod

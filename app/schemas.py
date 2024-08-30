@@ -1,42 +1,12 @@
-from enum import IntEnum
-from typing import List, Optional
-
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field
 
 
-class PurchaseData(BaseModel):
-    # anemic model
-    price: int
-    url: str
-    tx_id: int
+class BotScheme(BaseModel):
+	id: int = Field(default=None)
+	balance: int
+	token: str
+	active: bool
+	nickname: str
 
-
-class StatusCodes(IntEnum):
-    success = 200
-    fail = 500
-    already_bought = 401
-    no_tokens_available = 402
-    invalid_data = 400
-    invalid_price = 403
-
-
-class SendError(BaseModel):
-    name: str
-    info: str
-
-
-class ReturnSignal(BaseModel):
-    errors: Optional[List[SendError]] = []
-    status_code: StatusCodes
-    info: Optional[str] = ""
-    tx_id: Optional[int] = 0
-
-    @validator("errors")
-    def validate_error(cls, value: List[Exception]):
-        result = []
-        for v in value:
-            result.append(SendError(
-                name=v.__class__.__name__,
-                info=v.__str__()
-            ))
-        return result
+	class Meta:
+		orm_mode = True

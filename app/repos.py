@@ -1,5 +1,8 @@
 from typing import Sequence, Union, Optional
 
+from loguru import logger
+
+from app.schemas import BotScheme
 from app.services.interfaces import BasicDBConnector
 
 
@@ -43,4 +46,53 @@ class TokenRepository:
         model_name = self._model_name
 
         await conn.execute(f"CREATE TABLE IF NOT EXISTS {model_name} ("
-                           f"id SERIAL PRIMARY KEY, token TEXT, is_active BOOLEAN DEFAULT true);")
+                           f"token TEXT PRIMARY KEY, is_active BOOLEAN DEFAULT true);")
+
+
+class BotRepository:
+    def __init__(self, conn: BasicDBConnector, model_name: str, token_model_name: str):
+        self.conn = conn
+        self.model_name = model_name
+        self.token_model_name = token_model_name
+
+    async def fetch_bot_by_token(self, token: str) -> Optional[BotScheme]:
+        sql = f"SELECT * FROM {self.model_name} WHERE token = $1 LIMIT 1"
+        result = await self.conn.fetch(sql, token)
+        if result:
+            return BotScheme(**result)
+        return None
+
+    async def fetch_bot_by_id(self, id: int) -> Optional[BotScheme]:
+        sql = f"SELECT * FROM {self.model_name} WHERE id = $1 LIMIT 1"
+        result = await self.conn.fetch(sql, id)
+        if result:
+            return BotScheme(**result)
+        return None
+
+    async def mark_as_inactive(self, id: int) -> None:
+        sql = f"UPDATE {self.model_name} SET active = false WHERE id = $1"
+        await self.conn.execute(sql, id)
+
+    async def add_bot(self, bot: BotScheme) -> None:
+        sql = f"INSERT INTO {self.model_name} (balance, token, active, nickname) VALUES ($1, $2, $3, $4)"
+        await self.conn.execute(sql, bot.balance, bot.token, bot.active, bot.nickname)
+
+    async def update_balance_by_token(self, token: str, new_balance: int) -> None:
+        sql = f"UPDATE {self.model_name} SET balance = $1 WHERE token = $2"
+        await self.conn.execute(sql, new_balance, token)
+
+    async def update_balance_by_id(self, id: int, new_balance: int) -> None:
+        sql = f"UPDATE {self.model_name} SET balance = $1 WHERE id = $2"
+        await self.conn.execute(sql, new_balance, id)
+
+    async def create_bots_table(self) -> None:
+        sql = f"""
+        CREATE TABLE IF NOT EXISTS {self.model_name} (
+            id SERIAL PRIMARY KEY,
+            balance INT NOT NULL,
+            token TEXT UNIQUE NOT NULL REFERENCES {self.token_model_name},
+            active BOOLEAN DEFAULT true,
+            nickname TEXT
+        );
+        """
+        await self.conn.execute(sql)

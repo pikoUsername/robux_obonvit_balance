@@ -34,7 +34,7 @@ def auth(browser: WebDriver, token: str):
 	browser.refresh()
 
 
-async def auth_browser(driver: WebDriver, token_service: TokenRepository) -> None:
+async def auth_browser(driver: WebDriver, token_service: TokenRepository) -> str:
 	logger.info("First token has been taken")
 
 	token = await token_service.fetch_token()
@@ -53,3 +53,4 @@ async def auth_browser(driver: WebDriver, token_service: TokenRepository) -> Non
 		return await auth_browser(driver, token_service)
 
 	logger.info("Login complete")
+	return token
