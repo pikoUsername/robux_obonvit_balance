@@ -1,4 +1,4 @@
-FROM joyzoursky/python-chromedriver:3.9
+FROM joyzoursky/python-chromedriver:latest
 
 ENV PYTHONUNBUFFERED 1
 
@@ -10,7 +10,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && \
+RUN python3 -m pip install poetry && \
     poetry config virtualenvs.in-project true && \
     poetry install --no-dev
 
